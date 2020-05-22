@@ -14,8 +14,8 @@ class OrderApi:
     def __init__(self):
         self._slippage_std = .01
         self._prob_of_failure = .0001
-        self._fee = .02
-        self._fixed_fee = 10
+        self._fee = 0
+        self._fixed_fee = 0
         self._calculate_fee = lambda x: self._fee * abs(x) + self._fixed_fee
 
     def process_order(self, order):
@@ -101,7 +101,7 @@ class Controller:
             while True:
                 if not queue.empty():
                     o = queue.get()
-                    controller._logger.debug(o)
+                    # controller._logger.debug(o)
 
                     if o == 'POISON':
                         break
@@ -157,7 +157,11 @@ class Controller:
                     return False
 
             self._portfolio.update_trade(ticker=ticker, price=price, share_delta=share_delta, fee=fee)
-            self._logger.debug('Trade on %s for %s shares at %s with fee %s' % (ticker, share_delta, price, fee))
+            if share_delta > 0:
+                self._logger.debug('Bought %s for %s shares at %s with fee %s' % (ticker, share_delta, price, fee))
+            else:
+                self._logger.debug('Sold %s for %s shares at %s with fee %s' % (ticker, -share_delta, price, fee))
+
             return True
 
         return False
@@ -176,9 +180,11 @@ class Backtester:
             'Portfolio': Portfolio(),
             'Algorithm': Algorithm(),
             'Source': 'yahoo',
-            'Start_Day': dt.datetime(2016, 1, 1),
+            'Start_Day': dt.datetime(2019, 10, 1),
             'End_Day': dt.datetime.today(),
-            'Tickers': ['AAPL', 'AMZN', 'MSFT', 'NFLX', 'FB']
+            'Tickers': ['MMM', 'AXP', 'AAPL', 'BA', 'CAT', 'CVX', 'CSCO', 'KO', 'DIS', 'XOM',
+                        'GS', 'HD', 'IBM', 'INTC', 'JNJ', 'JPM', 'MCD', 'MRK', 'MSFT', 'NKE',
+                        'PFE', 'PG', 'TRV', 'UTX', 'UNH', 'VZ', 'V', 'WMT', 'WBA', 'AMZN']
         }
 
     def set_portfolio(self, portfolio):
@@ -215,9 +221,6 @@ class Backtester:
 
         # Initiate run
         q = Queue()
-        ds = None
-        c = None
-
         ds = DataSource(
             source=self.get_setting('Source'),
             start=self.get_setting('Start_Day'),
