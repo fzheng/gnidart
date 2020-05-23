@@ -26,7 +26,6 @@ class Algorithm:
         self._averages[stock] = price
 
     def _determine_if_trading(self, date, portfolio_value, cash_balance):
-        time_delay_met = True
         trade = False
         override = False
         self._updates += 1

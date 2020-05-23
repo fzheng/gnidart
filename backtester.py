@@ -23,7 +23,11 @@ class OrderApi:
 
         if np.random.choice([False, True], p=[self._prob_of_failure, 1 - self._prob_of_failure], size=1)[0]:
             trade_fee = self._fee * order[1] * (1 + slippage) * order[2]
-            return (order[0], order[1] * (1 + slippage), order[2], self._calculate_fee(trade_fee))
+            return order[0], order[1] * (1 + slippage), order[2], self._calculate_fee(trade_fee)
+
+    @property
+    def calculate_fee(self):
+        return self._calculate_fee
 
 
 class DataSource:
@@ -41,6 +45,7 @@ class DataSource:
                  end=dt.datetime.today()):
         if tickers is None:
             raise ValueError("tickers must not be None")
+        self._source = []
         self._logger = logging.getLogger(__name__)
         self.set_source(source=source, tickers=tickers, start=start, end=end)
 
@@ -77,13 +82,12 @@ class DataSource:
                     events.append((timestamp, indx[k], vals[k]))
 
         self._source = events
-
         self._logger.info('Loaded data!')
 
     def get_data(self):
         try:
             return self._source.pop(0)
-        except IndexError as e:
+        except IndexError:
             return 'POISON'
 
 
@@ -140,7 +144,7 @@ class Controller:
 
         if order is None or success is False:
             self._logger.info(('{order_type} failed: %s at $%s for %s shares' % order).format(
-                order_type='Sell' if order[2] < 0 else 'Buy'))
+                order_type='Sell' if order is not None and order[2] < 0 else 'Buy'))
 
     def process_receipt(self, receipt):
         ticker = receipt[0]
@@ -152,7 +156,7 @@ class Controller:
             if share_delta < 0 and -share_delta > self._portfolio.get_shares(ticker):
                 # Liquidate
                 share_delta = -self._portfolio.get_shares(ticker)
-                fee = self._order_api._calculate_fee(share_delta * price)
+                fee = self._order_api.calculate_fee(share_delta * price)
                 if fee > abs(share_delta * price):
                     return False
 

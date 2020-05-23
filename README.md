@@ -5,7 +5,7 @@ the consumer is the Controller class and the producer is the DataSource class. T
 in the Algorithm class.
 
 ## Run
-Enter "python backtester.py" for a default run. Output is logged to run.log.
+Enter `python backtester.py` for a default run. Output is logged to `run.log`.
 
 ## Virtualenv Usage
 To install `virtualenv` run
@@ -43,6 +43,6 @@ deactivate
 
 **Important**: Remember to add `venv` to your project's `.gitignore` file so you don't include all of that in your source code.
 
-It is preferable to install big packages (like Numpy), or packages you always use (like IPython) globally. All the rest can be installed in a `virtualenv`.
+It is preferable to install big packages (like `Numpy`), or packages you always use (like IPython) globally. All the rest can be installed in a `virtualenv`.
 
 

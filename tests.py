@@ -14,7 +14,8 @@ class ComponentTests(unittest.TestCase):
         p.update(ticker='TICK', price=9.0)
         p.set_shares('TICK', 3.0)
 
-        cur_time = lambda: datetime.datetime.now().strftime('%Y-%m-%d')
+        def cur_time(): datetime.datetime.now().strftime('%Y-%m-%d')
+
         q = Queue()
         q.put((cur_time(), 'TICK', 10.0))
         q.put((cur_time(), 'TICK', 11.0))
