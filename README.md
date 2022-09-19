@@ -1,27 +1,20 @@
-# backtester
+# GNIDART
 
-An event-based backtester written in Python. The backtester is built with a consumer/producer pattern where
-the consumer is the Controller class and the producer is the DataSource class. The trading algorithm is contained
-in the Algorithm class.
+The trading algorithm is contained in the Algorithm class.
 
 ## Run
-Enter `python backtester.py` for a default run. Output is logged to `run.log`.
+Enter `python3 backtester.py` for a default run. Output is logged to `run.log`.
 
 ## Virtualenv Usage
 To install `virtualenv` run
 ```shell script
-pip install virtualenv
+pip3 install virtualenv
 ```
 
-If you have a project in a directory called `my-project` you can set up `virtualenv` for that project by running
+If you have a project in a directory called `gnidart` you can set up `virtualenv` for that project by running
 ```shell script
-cd my-project/
-virtualenv venv
-```
-
-If you want your `virtualenv` to also inherit globally installed packages run:
-```shell script
-virtualenv venv --system-site-packages
+cd gnidart/
+python3 -m virtualenv venv
 ```
 
 These commands create a `venv/` directory in your project where all dependencies are installed. You need to **activate** it first though (in every terminal instance where you are working on your project):
@@ -29,9 +22,9 @@ These commands create a `venv/` directory in your project where all dependencies
 source venv/bin/activate
 ```
 
-You should see a `(venv)` appear at the beginning of your terminal prompt indicating that you are working inside the `virtualenv`. Now when you install something like this:
+You should see a `(venv)` appear at the beginning of your terminal prompt indicating that you are working inside the `virtualenv`. Now when you install dependencies:
 ```shell script
-pip install <package>
+pip3 install -r requirements.txt
 ```
 
 It will get installed in the `venv/` folder, and not conflict with other projects.
@@ -44,5 +37,3 @@ deactivate
 **Important**: Remember to add `venv` to your project's `.gitignore` file so you don't include all of that in your source code.
 
 It is preferable to install big packages (like `Numpy`), or packages you always use (like IPython) globally. All the rest can be installed in a `virtualenv`.
-
-
