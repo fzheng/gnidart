@@ -15,8 +15,8 @@ class OrderApi:
     def __init__(self):
         self._slippage_std = .01
         self._prob_of_failure = .0001
-        self._fee = .02
-        self._fixed_fee = 10
+        self._fee = .01
+        self._fixed_fee = 0
 
     def process_order(self, order):
         slippage = np.random.normal(0, self._slippage_std, size=1)[0]
@@ -163,11 +163,11 @@ class Controller:
 
             self._portfolio.update_trade(ticker=ticker, price=price, share_delta=share_delta, fee=fee)
             if share_delta > 0:
-                self._logger.debug('Bought %s for %s shares at %s with fee %s' % (ticker, share_delta, price, fee))
-                print('Bought %s for %s shares at %s with fee %s' % (ticker, share_delta, price, fee))
+                self._logger.debug('Bought %s for %d shares at $%.2f with fee $%.2f' % (ticker, share_delta, price, fee))
+                print('Bought %s for %d shares at $%.2f with fee $%.2f' % (ticker, share_delta, price, fee))
             else:
-                self._logger.debug('Sold %s for %s shares at %s with fee %s' % (ticker, -share_delta, price, fee))
-                print('Sold %s for %s shares at %s with fee %s' % (ticker, -share_delta, price, fee))
+                self._logger.debug('Sold %s for %d shares at $%.2f with fee $%.2f' % (ticker, -share_delta, price, fee))
+                print('Sold %s for %d shares at $%.2f with fee $%.2f' % (ticker, -share_delta, price, fee))
 
             return True
 
@@ -187,9 +187,9 @@ class Backtester:
             'Portfolio': Portfolio(),
             'Algorithm': Algorithm(),
             'Source': 'yahoo',
-            'Start_Day': dt.datetime(2020, 10, 1),
+            'Start_Day': dt.datetime(2020, 1, 1),
             'End_Day': dt.datetime.today(),
-            'Tickers': ['TSLA', 'AAPL', 'AMZN']
+            'Tickers': ['AAPL', 'MSFT', 'AMZN', 'TSLA', 'GOOGL']
         }
 
     def set_portfolio(self, portfolio):

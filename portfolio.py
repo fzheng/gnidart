@@ -4,7 +4,7 @@ class Portfolio:
     This is demonstrated in the many of the unit tests in the tests.py file.
     """
 
-    def __init__(self, balance=1000000):
+    def __init__(self, balance=10000):
         self._portfolio = {'**CASH**': {'Shares': balance, 'Price': 1.0, 'Updates': 1}}
 
     def update(self, price, ticker):
@@ -33,7 +33,7 @@ class Portfolio:
 
     def value_summary(self, date):
         value_sum = self.get_total_value()
-        return '%s : Stock value: %s, Cash: %s, Total %s' % (date, value_sum - self.balance, self.balance, value_sum)
+        return '%s : Stock value: $%.2f, Cash: $%.2f, Total $%.2f' % (date, value_sum - self.balance, self.balance, value_sum)
 
     def get_total_value(self):
         total_value = 0
