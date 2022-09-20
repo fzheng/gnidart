@@ -1,5 +1,6 @@
 import datetime as dt
 import logging
+import sys
 from multiprocessing import Process, Queue
 
 import numpy as np
@@ -14,20 +15,18 @@ class OrderApi:
     def __init__(self):
         self._slippage_std = .01
         self._prob_of_failure = .0001
-        self._fee = 0
-        self._fixed_fee = 0
-        self._calculate_fee = lambda x: self._fee * abs(x) + self._fixed_fee
+        self._fee = .02
+        self._fixed_fee = 10
 
     def process_order(self, order):
         slippage = np.random.normal(0, self._slippage_std, size=1)[0]
 
         if np.random.choice([False, True], p=[self._prob_of_failure, 1 - self._prob_of_failure], size=1)[0]:
             trade_fee = self._fee * order[1] * (1 + slippage) * order[2]
-            return order[0], order[1] * (1 + slippage), order[2], self._calculate_fee(trade_fee)
+            return order[0], order[1] * (1 + slippage), order[2], self.calculate_fee(trade_fee)
 
-    @property
-    def calculate_fee(self):
-        return self._calculate_fee
+    def calculate_fee(self, trade_fee):
+        return self._fee * abs(trade_fee) + self._fixed_fee
 
 
 class DataSource:
@@ -130,11 +129,13 @@ class Controller:
                             controller.process_order(order)
 
                         controller._logger.info(controller._portfolio.value_summary(timestamp))
+                        print(controller._portfolio.value_summary(timestamp))
 
         except Exception as e:
             print(e)
         finally:
             controller._logger.info(controller._portfolio.value_summary(None))
+            print(controller._portfolio.value_summary(None))
 
     def process_order(self, order):
         success = False
@@ -163,8 +164,10 @@ class Controller:
             self._portfolio.update_trade(ticker=ticker, price=price, share_delta=share_delta, fee=fee)
             if share_delta > 0:
                 self._logger.debug('Bought %s for %s shares at %s with fee %s' % (ticker, share_delta, price, fee))
+                print('Bought %s for %s shares at %s with fee %s' % (ticker, share_delta, price, fee))
             else:
                 self._logger.debug('Sold %s for %s shares at %s with fee %s' % (ticker, -share_delta, price, fee))
+                print('Sold %s for %s shares at %s with fee %s' % (ticker, -share_delta, price, fee))
 
             return True
 
@@ -184,11 +187,9 @@ class Backtester:
             'Portfolio': Portfolio(),
             'Algorithm': Algorithm(),
             'Source': 'yahoo',
-            'Start_Day': dt.datetime(2019, 10, 1),
+            'Start_Day': dt.datetime(2020, 10, 1),
             'End_Day': dt.datetime.today(),
-            'Tickers': ['MMM', 'AXP', 'AAPL', 'BA', 'CAT', 'CVX', 'CSCO', 'KO', 'DIS', 'XOM',
-                        'GS', 'HD', 'IBM', 'INTC', 'JNJ', 'JPM', 'MCD', 'MRK', 'MSFT', 'NKE',
-                        'PFE', 'PG', 'TRV', 'UTX', 'UNH', 'VZ', 'V', 'WMT', 'WBA', 'AMZN']
+            'Tickers': ['TSLA', 'AAPL', 'AMZN']
         }
 
     def set_portfolio(self, portfolio):
@@ -213,27 +214,17 @@ class Backtester:
         return self._settings[setting] if setting in self._settings else self._default_settings[setting]
 
     def backtest(self):
-        # Setup Logger
-        root = logging.getLogger()
-        root.setLevel(level=logging.DEBUG)
-        import os
-        filepath = 'run.log'
-        if os.path.exists(filepath):
-            os.remove(filepath)
-
-        root.addHandler(logging.FileHandler(filename=filepath))
-
         # Initiate run
         q = Queue()
         ds = DataSource(
             source=self.get_setting('Source'),
             start=self.get_setting('Start_Day'),
             end=self.get_setting('End_Day'),
-            tickers=self.get_setting('Tickers')
+            tickers=self.get_setting('Tickers'),
         )
         c = Controller(
             portfolio=self.get_setting('Portfolio'),
-            algorithm=self.get_setting('Algorithm')
+            algorithm=self.get_setting('Algorithm'),
         )
 
         p = Process(target=DataSource.process, args=(q, ds))
@@ -246,5 +237,18 @@ class Backtester:
 
 
 if __name__ == '__main__':
+    # filepath = 'run.log'
+    # if os.path.exists(filepath):
+    #     os.remove(filepath)
+    #
+
+    # Setup Logger
+    root_logger = logging.getLogger()
+    root_logger.setLevel(level=logging.DEBUG)
+    root_logger.addHandler(logging.StreamHandler(sys.stdout))
+
+    # root_logger.addHandler(logging.FileHandler(filename=filepath))
+    # multiprocessing_logging.install_mp_handler()
+
     b = Backtester()
     b.backtest()

@@ -3,7 +3,7 @@ import numpy as np
 
 class Algorithm:
     """
-    Example algorithm for trading. Must implement a "generate_orders" function which returns a list of orders.
+    Algorithm for trading. Must implement a "generate_orders" function which returns a list of orders.
     Each order is a tuple of the form
         ( Stock Ticker str, Current Price float, Order Amount in shares float)
 
@@ -14,7 +14,7 @@ class Algorithm:
     def __init__(self):
         self._averages = {}
         self._lambda = .5
-        self._fee_estimate = lambda x: x * .04 + 10
+        self._fee_estimate = 0
         self._updates = 0
         self._price_window = 20
         self._trend = np.zeros(self._price_window)
