@@ -1,6 +1,6 @@
 # GNIDART
 
-The trading algorithm is contained in the Algorithm class.
+An auto trade system.
 
 ## Run
 Enter `python3 backtester.py` for a default run. Output is logged to `run.log`.
