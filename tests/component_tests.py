@@ -1,7 +1,8 @@
 import unittest
 
-from backtester import Controller
-from portfolio import Portfolio
+from library.order import Order
+from library.portfolio import Portfolio
+from training.backtester import Controller
 
 
 class ComponentTests(unittest.TestCase):
@@ -80,7 +81,7 @@ class ComponentTests(unittest.TestCase):
         success = cont.process_receipt(('TICK', 11.0, -5.0, 10.0))
         eps = 1e-4
 
-        updated_fee = cont._order_api.calculate_fee(11.0 * 3.0)
+        updated_fee = cont._order_api.calculate_fee(Order('Tick', 11.0, 3.0))
 
         self.assertTrue(success)  # Trade went through
         self.assertTrue(abs(13.0 + (3 * 11.0) - updated_fee - p.balance) < eps)  # Balance updated correctly

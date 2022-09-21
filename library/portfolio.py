@@ -1,7 +1,7 @@
 class Portfolio:
     """
     A custom portfolio may be created by instantiating the Portfolio class and adding stocks, prices, and shares.
-    This is demonstrated in the many of the unit tests in the tests.py file.
+    This is demonstrated in the many of the unit tests in the component_tests.py file.
     """
 
     def __init__(self, balance=10000):
@@ -33,7 +33,8 @@ class Portfolio:
 
     def value_summary(self, date):
         value_sum = self.get_total_value()
-        return '%s : Stock value: $%.2f, Cash: $%.2f, Total $%.2f' % (date, value_sum - self.balance, self.balance, value_sum)
+        return '%s : Stock value: $%.2f, Cash: $%.2f, Total $%.2f' % (
+            date, value_sum - self.balance, self.balance, value_sum)
 
     def get_total_value(self):
         total_value = 0

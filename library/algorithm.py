@@ -1,14 +1,11 @@
 import numpy as np
 
+from library.order import Order
+
 
 class Algorithm:
     """
     Algorithm for trading. Must implement a "generate_orders" function which returns a list of orders.
-    Each order is a tuple of the form
-        ( Stock Ticker str, Current Price float, Order Amount in shares float)
-
-    Algorithm trades for stocks via a rolling window strategy, and randomly liquidates positions
-
     """
 
     def __init__(self):
@@ -60,23 +57,23 @@ class Algorithm:
         if len(valid_stocks) == 0:
             return orders
 
-        for stock in np.random.choice(valid_stocks, replace=False, size=len(valid_stocks)):
-            amt = cash_balance / len(valid_stocks)  # Spend available cash
+        cost_per_stock = cash_balance / len(valid_stocks)  # Split available cash to buy stocks
+        for stock in valid_stocks:
+            # TODO: STRATEGY RULE?
             relative_change = (self.get_window_average(stock=stock) - self.get_price(stock)) / self.get_price(stock)
-
             if abs(relative_change) > .03:
                 # Positive is buy, negative is sell
                 order_type = np.sign(relative_change)
-                if order_type > 0 and np.random.uniform(0, 1, size=1)[0] < .9:
-                    amt = np.round(amt / self.get_price(stock), 0)
+                if order_type > 0:
+                    qty = np.round(cost_per_stock / self.get_price(stock), 0)
                 else:
-                    amt = - portfolio.get_shares(stock)  # Liquidate! Why not?
+                    qty = - portfolio.get_shares(stock)  # Liquidate
 
-                if abs(amt) < .01:
-                    # Stop small trades
+                if abs(qty) < .01:
+                    # Discards small trades
                     continue
 
-                orders.append((stock, self.get_price(stock), amt))
+                orders.append(Order(stock, self.get_price(stock), qty))
 
         self._last_trade = self._updates
         self._last_date = timestamp

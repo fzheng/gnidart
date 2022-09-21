@@ -7,26 +7,28 @@ import numpy as np
 import pandas as pd
 from pandas_datareader import DataReader
 
-from algorithm import Algorithm
-from portfolio import Portfolio
+from library.algorithm import Algorithm
+from library.order import Order
+from library.portfolio import Portfolio
 
 
 class OrderApi:
     def __init__(self):
         self._slippage_std = .01
         self._prob_of_failure = .0001
-        self._fee = .01
+        self._fee_per_share = .005
         self._fixed_fee = 0
 
-    def process_order(self, order):
+    def process_order(self, order: Order):
+        # Simulate the price volatility
         slippage = np.random.normal(0, self._slippage_std, size=1)[0]
 
+        # Simulate the order processing so that it may fail
         if np.random.choice([False, True], p=[self._prob_of_failure, 1 - self._prob_of_failure], size=1)[0]:
-            trade_fee = self._fee * order[1] * (1 + slippage) * order[2]
-            return order[0], order[1] * (1 + slippage), order[2], self.calculate_fee(trade_fee)
+            return order.stock, order.price * (1 + slippage), order.quantity, self.calculate_fee(order)
 
-    def calculate_fee(self, trade_fee):
-        return self._fee * abs(trade_fee) + self._fixed_fee
+    def calculate_fee(self, order: Order) -> float:
+        return self._fee_per_share * abs(order.quantity) + self._fixed_fee
 
 
 class DataSource:
@@ -63,7 +65,7 @@ class DataSource:
         counter = 0.
         for ticker in tickers:
             try:
-                self._logger.info('Loading ticker %s' % (counter / len(tickers)))
+                self._logger.info('Loading ticker %.0f%%' % (100 * counter / len(tickers)))
                 prices[ticker] = DataReader(ticker, source, start, end).loc[:, 'Close']
             except Exception as e:
                 self._logger.error(e)
@@ -121,11 +123,7 @@ class Controller:
 
                     # Process orders
                     if len(orders) > 0:
-                        # Randomize the order execution
-                        final_orders = [orders[k] for k in
-                                        np.random.choice(len(orders), replace=False, size=len(orders))]
-
-                        for order in final_orders:
+                        for order in orders:
                             controller.process_order(order)
 
                         controller._logger.info(controller._portfolio.value_summary(timestamp))
@@ -143,9 +141,17 @@ class Controller:
         if receipt is not None:
             success = self.process_receipt(receipt)
 
-        if order is None or success is False:
-            self._logger.info(('{order_type} failed: %s at $%s for %s shares' % order).format(
-                order_type='Sell' if order is not None and order[2] < 0 else 'Buy'))
+        if order is None:
+            self._logger.info(('{order_type} failed: %s' % order).format(
+                order_type='Sell' if order is not None and order.quantity < 0 else 'Buy'))
+            print(('{order_type} failed: %s' % order).format(
+                order_type='Sell' if order is not None and order.quantity < 0 else 'Buy'))
+        elif success is False:
+            self._logger.info(
+                ('{order_type} failed: %s at $%s for %s shares' % (order.stock, order.price, order.quantity)).format(
+                    order_type='Sell' if order is not None and order.quantity < 0 else 'Buy'))
+            print(('{order_type} failed: %s at $%s for %s shares' % (order.stock, order.price, order.quantity)).format(
+                order_type='Sell' if order is not None and order.quantity < 0 else 'Buy'))
 
     def process_receipt(self, receipt):
         ticker = receipt[0]
@@ -157,17 +163,19 @@ class Controller:
             if share_delta < 0 and -share_delta > self._portfolio.get_shares(ticker):
                 # Liquidate
                 share_delta = -self._portfolio.get_shares(ticker)
-                fee = self._order_api.calculate_fee(share_delta * price)
+                fee = self._order_api.calculate_fee(Order(ticker, price, share_delta))  # TODO: WHY?
                 if fee > abs(share_delta * price):
                     return False
 
             self._portfolio.update_trade(ticker=ticker, price=price, share_delta=share_delta, fee=fee)
             if share_delta > 0:
-                self._logger.debug('Bought %s for %d shares at $%.2f with fee $%.2f' % (ticker, share_delta, price, fee))
-                print('Bought %s for %d shares at $%.2f with fee $%.2f' % (ticker, share_delta, price, fee))
+                self._logger.debug(
+                    'Bought %s for %.1f shares at $%.2f with fee $%.2f' % (ticker, share_delta, price, fee))
+                print('Bought %s for %.1f shares at $%.2f with fee $%.2f' % (ticker, share_delta, price, fee))
             else:
-                self._logger.debug('Sold %s for %d shares at $%.2f with fee $%.2f' % (ticker, -share_delta, price, fee))
-                print('Sold %s for %d shares at $%.2f with fee $%.2f' % (ticker, -share_delta, price, fee))
+                self._logger.debug(
+                    'Sold %s for %.1f shares at $%.2f with fee $%.2f' % (ticker, -share_delta, price, fee))
+                print('Sold %s for %.1f shares at $%.2f with fee $%.2f' % (ticker, -share_delta, price, fee))
 
             return True
 
@@ -187,7 +195,7 @@ class Backtester:
             'Portfolio': Portfolio(),
             'Algorithm': Algorithm(),
             'Source': 'yahoo',
-            'Start_Day': dt.datetime(2020, 1, 1),
+            'Start_Day': dt.datetime(2022, 1, 1),
             'End_Day': dt.datetime.today(),
             'Tickers': ['AAPL', 'MSFT', 'AMZN', 'TSLA', 'GOOGL']
         }

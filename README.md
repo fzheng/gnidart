@@ -13,7 +13,7 @@ pip3 install virtualenv
 
 If you have a project in a directory called `gnidart` you can set up `virtualenv` for that project by running
 ```shell script
-cd gnidart/
+cd library/
 python3 -m virtualenv venv
 ```
 
