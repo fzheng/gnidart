@@ -18,13 +18,16 @@ class OrderApi:
         self._prob_of_failure = .0001
         self._fee_per_share = .005
         self._fixed_fee = 0
+        self._allow_order_fail = False
+        self._allow_volatile = False
 
     def process_order(self, order: Order):
         # Simulate the price volatility
-        slippage = np.random.normal(0, self._slippage_std, size=1)[0]
+        slippage = np.random.normal(0, self._slippage_std, size=1)[0] if self._allow_volatile else 0.
 
         # Simulate the order processing so that it may fail
-        if np.random.choice([False, True], p=[self._prob_of_failure, 1 - self._prob_of_failure], size=1)[0]:
+        if (np.random.choice([False, True], p=[self._prob_of_failure, 1 - self._prob_of_failure], size=1)[0]) \
+                or not self._allow_order_fail:
             return order.stock, order.price * (1 + slippage), order.quantity, self.calculate_fee(order)
 
     def calculate_fee(self, order: Order) -> float:
@@ -62,27 +65,27 @@ class DataSource:
 
     def set_source(self, source, tickers, start, end):
         prices = pd.DataFrame()
-        counter = 0.
+        counter = 0
         for ticker in tickers:
             try:
-                self._logger.info('Loading ticker %.0f%%' % (100 * counter / len(tickers)))
+                self._logger.info('Loading ticker %.0f%%' % (100.0 * counter / len(tickers)))
                 prices[ticker] = DataReader(ticker, source, start, end).loc[:, 'Close']
             except Exception as e:
                 self._logger.error(e)
                 pass
             counter += 1
 
-        events = []
+        history = []
         for row in prices.iterrows():
             timestamp = row[0]
             series = row[1]
             vals = series.values
             indx = series.index
-            for k in np.random.choice(len(vals), replace=False, size=len(vals)):  # Shuffle!
+            for k in range(0, len(vals), 1):
                 if np.isfinite(vals[k]):
-                    events.append((timestamp, indx[k], vals[k]))
+                    history.append((timestamp, indx[k], vals[k]))
 
-        self._source = events
+        self._source = history
         self._logger.info('Loaded data!')
 
     def get_data(self):
@@ -163,7 +166,7 @@ class Controller:
             if share_delta < 0 and -share_delta > self._portfolio.get_shares(ticker):
                 # Liquidate
                 share_delta = -self._portfolio.get_shares(ticker)
-                fee = self._order_api.calculate_fee(Order(ticker, price, share_delta))  # TODO: WHY?
+                fee = self._order_api.calculate_fee(Order(ticker, price, share_delta))
                 if fee > abs(share_delta * price):
                     return False
 
