@@ -44,7 +44,7 @@ class Algorithm:
 
     def generate_orders(self, timestamp, portfolio):
         orders = []
-        cash_balance = portfolio.balance
+        cash_balance = portfolio.cash
         portfolio_value = portfolio.get_total_value()
         self.add_trend_value(portfolio_value)
 
@@ -80,28 +80,28 @@ class Algorithm:
         return orders
 
     def get_window_average(self, stock):
-        return np.mean(self._averages[stock]['History'])
+        return np.mean(self._averages[stock]['history'])
 
     def update(self, stock, price):
         if stock in self._averages:
             self.add_price(stock, price)
         else:
             length = self._price_window
-            self._averages[stock] = {'History': np.zeros(length), 'Index': 0, 'Length': length}
-            data = self._averages[stock]['History']
+            self._averages[stock] = {'history': np.zeros(length), 'index': 0, 'length': length}
+            data = self._averages[stock]['history']
             data[0] = price
 
     def get_price(self, stock):
         # Assumes history is full
-        return self._averages[stock]['History'][-1]
+        return self._averages[stock]['history'][-1]
 
     def add_price(self, stock, price):
-        history = self._averages[stock]['History']
-        ind = self._averages[stock]['Index']
-        length = self._averages[stock]['Length']
+        history = self._averages[stock]['history']
+        ind = self._averages[stock]['index']
+        length = self._averages[stock]['length']
         if ind < length - 1:
             history[ind + 1] = price
-            self._averages[stock]['Index'] = ind + 1
+            self._averages[stock]['index'] = ind + 1
         elif ind == length - 1:
             history[:-1] = history[1:]
             history[-1] = price

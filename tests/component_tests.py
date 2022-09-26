@@ -1,4 +1,6 @@
+import datetime
 import unittest
+from multiprocessing import Queue
 
 from library.order import Order
 from library.portfolio import Portfolio
@@ -8,9 +10,6 @@ from training.backtester import Controller
 class ComponentTests(unittest.TestCase):
 
     def test_stream(self):
-        import datetime
-        from multiprocessing import Queue
-
         p = Portfolio(balance=10.0)
         p.update(ticker='TICK', price=9.0)
         p.set_shares('TICK', 3.0)
@@ -36,7 +35,7 @@ class ComponentTests(unittest.TestCase):
         p.set_shares('TICK', 3.0)
         eps = 1e-7
 
-        self.assertTrue(abs(10.0 - p.balance) < eps)  # Balance correct
+        self.assertTrue(abs(10.0 - p.cash) < eps)  # Balance correct
         self.assertTrue(abs(3.0 - p.get_shares('TICK')) < eps)  # Shares updated
         self.assertTrue(abs(40.0 - p.get_total_value()) < eps)  # Shares updated
 
@@ -46,10 +45,10 @@ class ComponentTests(unittest.TestCase):
         p.set_shares('TICK', 3.0)
         cont = Controller(p)
         success = cont.process_receipt(('TICK', 11.0, 2.0, 10.0))
-        eps = 1e-4
+        eps = 1e-7
 
         self.assertTrue(success)  # Trade went through
-        self.assertTrue(abs(1.0 - p.balance) < eps)  # Balance updated correctly
+        self.assertTrue(abs(1.0 - p.cash) < eps)  # Balance updated correctly
         self.assertTrue(abs(5.0 - p.get_shares('TICK')) < eps)  # Shares updated
 
     def test_buy_fail(self):
@@ -67,10 +66,10 @@ class ComponentTests(unittest.TestCase):
         p.set_shares('TICK', 3.0)
         cont = Controller(p)
         success = cont.process_receipt(('TICK', 11.0, -2.0, 10.0))
-        eps = 1e-4
+        eps = 1e-7
 
         self.assertTrue(success)  # Trade went through
-        self.assertTrue(abs(25.0 - p.balance) < eps)  # Balance updated correctly
+        self.assertTrue(abs(25.0 - p.cash) < eps)  # Balance updated correctly
         self.assertTrue(abs(1.0 - p.get_shares('TICK')) < eps)  # Shares updated
 
     def test_liquidate(self):
@@ -79,14 +78,14 @@ class ComponentTests(unittest.TestCase):
         p.set_shares('TICK', 3.0)
         cont = Controller(p)
         success = cont.process_receipt(('TICK', 11.0, -5.0, 10.0))
-        eps = 1e-4
+        eps = 1e-7
 
         updated_fee = cont._order_api.calculate_fee(Order('Tick', 11.0, 3.0))
 
         self.assertTrue(success)  # Trade went through
-        self.assertTrue(abs(13.0 + (3 * 11.0) - updated_fee - p.balance) < eps)  # Balance updated correctly
+        self.assertTrue(abs(13.0 + (3 * 11.0) - updated_fee - p.cash) < eps)  # Balance updated correctly
         self.assertTrue(abs(0.0 - p.get_shares('TICK')) < eps)  # Shares updated
-        self.assertTrue(abs(12.3 - p.get_price('TICK')) < eps)  # Price not updated from slippage
+        self.assertTrue(abs(11.0 - p.get_price('TICK')) < eps)  # Price should reflect the latest update
 
 
 if __name__ == '__main__':
